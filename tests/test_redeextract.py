@@ -59,15 +59,16 @@ def test_incorrect_field_type_raises_exception():
             exc_info:
         _ = redeextract.RasteriseToMastergrid(TEST_SHP, TEMPLATE,
                                               OUT_RASTER, field='GID_0')
-    assert str(exc_info.value) == ('GID_0 is not a valid attribute in '
-    'the shapefile/geopackage. Please retry with a valid integer field.')
-    print(str(exc_info.value))
+    assert str(exc_info.value) == \
+        ('GID_0 is not a valid attribute in '
+         'the shapefile/geopackage. Please retry with a valid'
+         ' integer field.')
 
 
 def test_extent_and_dimensions(gpkg):
     src = rasterio.open(TEMPLATE)
     expected_extent = (f'{src.bounds.left} {src.bounds.bottom} '
-        f'{src.bounds.right} {src.bounds.top}')
+                       f'{src.bounds.right} {src.bounds.top}')
     expected_dims = f'{src.width} {src.height}'
     src.close()
     assert gpkg.extent == expected_extent
@@ -78,7 +79,7 @@ def test_rasterise(gpkg):
     gpkg.rasterise()
     src = rasterio.open(OUT_RASTER)
     expected_extent = (f'{src.bounds.left} {src.bounds.bottom} '
-        f'{src.bounds.right} {src.bounds.top}')
+                       f'{src.bounds.right} {src.bounds.top}')
     expected_dims = f'{src.width} {src.height}'
     assert OUT_RASTER.exists()
     assert gpkg.extent == expected_extent  # CHECK OUTPUT matches master
@@ -101,13 +102,14 @@ def test_rasterise(gpkg):
 def test_extract_by_raster_mask(extr):
     src = rasterio.open(OUT_EXTRACT)
     extent = (f'{src.bounds.left} {src.bounds.bottom} '
-        f'{src.bounds.right} {src.bounds.top}')
+              f'{src.bounds.right} {src.bounds.top}')
     dims = f'{src.width} {src.height}'
     src.close()
 
     src_mst = rasterio.open(TEMPLATE)
-    mst_extent = (f'{src_mst.bounds.left} {src_mst.bounds.bottom} '
-        f'{src_mst.bounds.right} {src_mst.bounds.top}')
+    mst_extent = \
+        (f'{src_mst.bounds.left} {src_mst.bounds.bottom} '
+         f'{src_mst.bounds.right} {src_mst.bounds.top}')
     dims_mst = f'{src_mst.width} {src_mst.height}'
     src_mst.close()
     assert OUT_EXTRACT.exists()

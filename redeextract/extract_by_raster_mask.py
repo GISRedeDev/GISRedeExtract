@@ -1,5 +1,5 @@
 """
-Class to extract global rasters to extent and mask of WorldPop Mastergrid
+Class to extract global rasters to extent and mask of template raster
 
 GDAL command line utilities should be installed on the working
  computer and the path to GDAL should be set in the environment variables
@@ -79,7 +79,7 @@ class ExtractByRasterMask:
         profile.update(tiled=True)
         profile.update(blockxsize=512, blockysize=512)
         extent_str = (f'{src.bounds.left} {src.bounds.bottom} '
-        f'{src.bounds.right} {src.bounds.top}')
+                      f'{src.bounds.right} {src.bounds.top}')
         dimension_str = f'{src.width} {src.height}'
         src.close()
         return extent_str, dimension_str, profile
@@ -90,12 +90,12 @@ class ExtractByRasterMask:
         global raster to extent of mask raster
         """
         cmd = (f'gdalwarp -ot Float32 -te {self.extent_str} -r '
-            f'{self.resampling} -srcnodata {self.original_nodata} '
-            f'-dstnodata {self.nodata} -co "COMPRESS=LZW" -co '
-            f'"PREDICTOR=2" -co "BIGTIFF=YES" -co "BLOCKXSIZE=512" '
-            f'-co "BLOCKYSIZE=512" -co "TILED=YES" '
-            f'-ts {self.dimensions_str} {str(self.glob_raster)} '
-            f'{str(self.out_raster.parent.joinpath("tmp.tif"))}')
+               f'{self.resampling} -srcnodata {self.original_nodata} '
+               f'-dstnodata {self.nodata} -co "COMPRESS=LZW" -co '
+               f'"PREDICTOR=2" -co "BIGTIFF=YES" -co "BLOCKXSIZE=512" '
+               f'-co "BLOCKYSIZE=512" -co "TILED=YES" '
+               f'-ts {self.dimensions_str} {str(self.glob_raster)} '
+               f'{str(self.out_raster.parent.joinpath("tmp.tif"))}')
         subprocess.run(cmd, stdout=subprocess.DEVNULL,
                        stderr=subprocess.STDOUT, check=True)
 
@@ -189,8 +189,10 @@ class RasteriseToMastergrid:
                     {self.vector}.")
         if not self.attribute_field_valid():
             raise AttributeFieldInvalidError(f'{self.field} is not a '
-            'valid attribute in the shapefile/geopackage. Please '
-            'retry with a valid integer field.')
+                                             'valid attribute in the '
+                                             'shapefile/geopackage. '
+                                             'Please retry with a '
+                                             'valid integer field.')
         self.extent, self.dims = self.get_extent_dims_string()
 
     def attribute_field_valid(self,):
@@ -220,7 +222,7 @@ class RasteriseToMastergrid:
         """
         src = rasterio.open(self.mastergrid)
         extent_str = (f'{src.bounds.left} {src.bounds.bottom} '
-            f'{src.bounds.right} {src.bounds.top}')
+                      f'{src.bounds.right} {src.bounds.top}')
         dimension_str = f'{src.width} {src.height}'
         src.close()
         return extent_str, dimension_str
@@ -241,18 +243,25 @@ class RasteriseToMastergrid:
         """
         if not self.layer:
             cmd = (f'gdal_rasterize -a {self.field} -co "COMPRESS=LZW" -co '
-            f'"PREDICTOR=2" -co "BIGTIFF=YES" -co "BLOCKXSIZE=512" -co '
-            f'"BLOCKYSIZE=512" -co "TILED=YES" -ts {self.dims} -te '
-            f'{self.extent} -a_nodata {self.nodata} -ot {self.dtype} '
-            f'{str(self.vector)} {str(self.out_raster)}')
+                   f'"PREDICTOR=2" -co "BIGTIFF=YES" -co \
+                    "BLOCKXSIZE=512" -co '
+                   f'"BLOCKYSIZE=512" -co "TILED=YES" -ts {self.dims} \
+                    -te '
+                   f'{self.extent} -a_nodata {self.nodata} -ot \
+                    {self.dtype} '
+                   f'{str(self.vector)} {str(self.out_raster)}')
         else:
             cmd = \
-            (f'gdal_rasterize -a {self.field} -co "COMPRESS=LZW" -co '
-            f'"PREDICTOR=2" -co "BIGTIFF=YES" -co "BLOCKXSIZE=512" -co '
-            f'"BLOCKYSIZE=512" -co "TILED=YES" -ts {self.dims} -te '
-            f'{self.extent} -a_nodata {self.nodata} -ot {self.dtype} '
-            f'-l {self.layer} '
-            f'{str(self.vector)} {str(self.out_raster)}')
+                (f'gdal_rasterize -a {self.field} -co "COMPRESS=LZW"\
+                    -co '
+                 f'"PREDICTOR=2" -co "BIGTIFF=YES" -co \
+                     "BLOCKXSIZE=512" -co '
+                 f'"BLOCKYSIZE=512" -co "TILED=YES" -ts \
+                    {self.dims} -te '
+                 f'{self.extent} -a_nodata {self.nodata} -ot \
+                    {self.dtype} '
+                 f'-l {self.layer} '
+                 f'{str(self.vector)} {str(self.out_raster)}')
         subprocess.run(cmd, stdout=subprocess.DEVNULL,
                        stderr=subprocess.STDOUT)
 
