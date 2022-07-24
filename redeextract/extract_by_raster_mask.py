@@ -5,14 +5,15 @@ GDAL command line utilities should be installed on the working
  computer and the path to GDAL should be set in the environment variables
 """
 from concurrent.futures import ThreadPoolExecutor
-import fiona
-import geopandas as gpd
+import os
 import subprocess
 import threading
+
+import fiona
+import geopandas as gpd
 import rasterio
 import numpy as np
 import pandas.api.types as ptypes
-import os
 
 MAX_WORKERS = os.cpu_count() * 5  # Number of threads to use concurrently
 
@@ -31,6 +32,8 @@ DATA_TYPES = {
 
 
 class ExtractByRasterMask:
+    """Class to extract raster to extent and extent of template \
+        raster"""
 
     def __init__(self, glob_raster, mask_raster, out_raster,
                  nodata=-99999, dtype='float32',
@@ -94,7 +97,7 @@ class ExtractByRasterMask:
                 -ts {self.dimensions_str} {str(self.glob_raster)} \
                 {str(self.out_raster.parent.joinpath("tmp.tif"))}'
         subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                       stderr=subprocess.STDOUT)
+                       stderr=subprocess.STDOUT, check=True)
 
     def extract_to_mask(self):
         """
@@ -125,7 +128,7 @@ class ExtractByRasterMask:
         """Calls gdalinfo to calculate stats on output raster"""
         cmd = f"gdalinfo -stats {self.out_raster}"
         subprocess.call(cmd, stdout=subprocess.DEVNULL,
-                        stderr=subprocess.STDOUT)
+                        stderr=subprocess.STDOUT, check=True)
         # REMOVE TMP RASTER
         self.out_raster.parent.joinpath('tmp.tif').unlink()
 
@@ -242,12 +245,14 @@ class RasteriseToMastergrid:
             {self.extent} -a_nodata {self.nodata} -ot {self.dtype} \
             {str(self.vector)} {str(self.out_raster)}'
         subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                       stderr=subprocess.STDOUT)
+                       stderr=subprocess.STDOUT, check=True)
 
 
 class AttributeFieldInvalidError(Exception):
+    """Attribute field invalid error"""
     pass
 
 
 class LayerNotFoundError(Exception):
+    """Layer not found error"""
     pass
