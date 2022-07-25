@@ -1,0 +1,4 @@
+geopandas
+rasterio
+pytest
+flake8
