@@ -97,7 +97,7 @@ class ExtractByRasterMask:
                f'-ts {self.dimensions_str} {str(self.glob_raster)} '
                f'{str(self.out_raster.parent.joinpath("tmp.tif"))}')
         subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                       stderr=subprocess.STDOUT, check=True)
+                       stderr=subprocess.STDOUT, check=True, shell=True)
 
     def extract_to_mask(self):
         """
@@ -128,7 +128,7 @@ class ExtractByRasterMask:
         """Calls gdalinfo to calculate stats on output raster"""
         cmd = f"gdalinfo -stats {self.out_raster}"
         subprocess.call(cmd, stdout=subprocess.DEVNULL,
-                        stderr=subprocess.STDOUT)
+                        stderr=subprocess.STDOUT, shell=True)
         # REMOVE TMP RASTER
         self.out_raster.parent.joinpath('tmp.tif').unlink()
 
@@ -263,7 +263,7 @@ class RasteriseToMastergrid:
                  f'-l {self.layer} '
                  f'{str(self.vector)} {str(self.out_raster)}')
         subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                       stderr=subprocess.STDOUT)
+                       stderr=subprocess.STDOUT, shell=True)
 
 
 class AttributeFieldInvalidError(Exception):
