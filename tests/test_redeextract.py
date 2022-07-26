@@ -65,14 +65,16 @@ def test_incorrect_field_type_raises_exception():
          ' integer field.')
 
 
-def test_extent_and_dimensions(gpkg):
+def test_extent_and_dimensions(extr):
     src = rasterio.open(TEMPLATE)
-    expected_extent = (f'{src.bounds.left} {src.bounds.bottom} '
-                       f'{src.bounds.right} {src.bounds.top}')
-    expected_dims = f'{src.width} {src.height}'
+    expected_extent = (src.bounds.left, src.bounds.bottom,
+                       src.bounds.right, src.bounds.top)
+    expected_width = src.width
+    expected_height =  src.height
     src.close()
-    assert gpkg.extent == expected_extent
-    assert gpkg.dims == expected_dims
+    assert extr.extent == expected_extent
+    assert extr.height == expected_height
+    assert extr.width == expected_width
 
 
 def test_rasterise(gpkg):

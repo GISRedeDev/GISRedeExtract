@@ -11,6 +11,7 @@ import threading
 
 import fiona
 import geopandas as gpd
+from osgeo import gdal
 import rasterio
 import numpy as np
 import pandas.api.types as ptypes
@@ -59,7 +60,7 @@ class ExtractByRasterMask:
         self.dtype = dtype
         self.resampling = resampling
         self.original_nodata = None
-        self.extent_str, self.dimensions_str, self.profile = \
+        self.extent, self.width, self.height, self.profile = \
             self.get_extent_dims()
         self.extract_to_extent()
         self.extract_to_mask()
@@ -78,26 +79,42 @@ class ExtractByRasterMask:
                        compress='LZW', bigtiff='IF_SAFER')
         profile.update(tiled=True)
         profile.update(blockxsize=512, blockysize=512)
-        extent_str = (f'{src.bounds.left} {src.bounds.bottom} '
-                      f'{src.bounds.right} {src.bounds.top}')
-        dimension_str = f'{src.width} {src.height}'
+        extent = (src.bounds.left,
+                  src.bounds.bottom,
+                  src.bounds.right,
+                  src.bounds.top)
+        height = src.height
+        width = src.width
         src.close()
-        return extent_str, dimension_str, profile
+        return extent, width, height, profile
 
     def extract_to_extent(self):
         """
         Saves tmp file in same folder as out_raster as extraction of
         global raster to extent of mask raster
         """
-        cmd = (f'gdalwarp -ot Float32 -te {self.extent_str} -r '
+        ''' cmd = (f'gdalwarp -ot Float32 -te {self.extent_str} -r '
                f'{self.resampling} -srcnodata {self.original_nodata} '
                f'-dstnodata {self.nodata} -co "COMPRESS=LZW" -co '
                f'"PREDICTOR=2" -co "BIGTIFF=YES" -co "BLOCKXSIZE=512" '
                f'-co "BLOCKYSIZE=512" -co "TILED=YES" '
                f'-ts {self.dimensions_str} {str(self.glob_raster)} '
                f'{str(self.out_raster.parent.joinpath("tmp.tif"))}')
+        print(cmd)
         subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                       stderr=subprocess.STDOUT, check=True, shell=True)
+                       stderr=subprocess.STDOUT, check=True, shell=True) '''
+        gdal.Warp(str(self.out_raster.parent.joinpath("tmp.tif")),
+                  str(self.glob_raster),
+                  outputBounds=self.extent,
+                  width=self.width,
+                  height=self.height,
+                  resampleAlg=self.resampling,
+                  dstNodata=self.nodata,
+                  options=['"COMPRESS=LZW" '
+                           '"PREDICTOR=2" "BIGTIFF=YES" '
+                           '"BLOCKXSIZE=512" "BLOCKYSIZE=512" '
+                           '"TILED=YES"']
+                  )
 
     def extract_to_mask(self):
         """
