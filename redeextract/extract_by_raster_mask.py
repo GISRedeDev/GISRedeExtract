@@ -10,11 +10,13 @@ import subprocess
 import threading
 
 import fiona
+from geocube.api.core import make_geocube
 import geopandas as gpd
 from osgeo import gdal
 import rasterio
 import numpy as np
 import pandas.api.types as ptypes
+import rioxarray
 
 MAX_WORKERS = os.cpu_count() * 5  # Number of threads to use concurrently
 
@@ -154,17 +156,13 @@ class RasteriseToMastergrid:
     """Class with functions that call gdal commands to rasterise
     shapefiles or geopackages so that the output extent and resolution
     and transform match the input mastergrid"""
-    def __init__(self, vector, mastergrid, out_raster, field,
-                 dtype="int32", nodata=9999, layer=None):
+    def __init__(self, vector, out_raster, field, 
+                 template=None, resolution=None, dtype="int32", nodata=9999, layer=None):
         """
         Initialisation:
         ---------------
         vector :    (Path/str)
             Path to shapefile or geopackage to rasterise
-
-        mastergrid :    (Path/str)
-            Path to mastergrid to use as a template for extent/
-            transform and resolution
 
         out_raster :    (Path/str)
             Path to output raster
@@ -172,6 +170,12 @@ class RasteriseToMastergrid:
         field : (str)
             Attribute field in shapefile to use as pixel value. Values
             in this field should be numeric - preferrably integer
+
+        template : (None/Path/str)
+            Path to template raster used to match extent and resolution (if not None then there MUST be a resolution - Not both) (DEFAULT = None)            
+        
+        resolution : (None/tuple)
+            Resolution as length 2 tuple i.e. (0.008333333, 0.008333333) (DEFAULT = None)
 
         dtype : (str)
             Datatype/pixel depth of output raster
@@ -192,9 +196,10 @@ class RasteriseToMastergrid:
         None
         """
         self.vector = vector
-        self.mastergrid = mastergrid
         self.out_raster = out_raster
         self.field = field
+        self.template = template
+        self.resolution = resolution
         self.dtype = dtype
         self.nodata = nodata
         self.layer = layer
@@ -210,6 +215,11 @@ class RasteriseToMastergrid:
                                              'shapefile/geopackage. '
                                              'Please retry with a '
                                              'valid integer field.')
+        if (not self.template) & (not self.resolution):
+            raise ResolutionNotGivenError('Template or resolution '
+                                          'should be given. Not both '
+                                          'or none')
+        self.dataset = rioxarray.open_rasterio(self.template)
         self.extent, self.dims = self.get_extent_dims_string()
 
     def attribute_field_valid(self,):
@@ -237,7 +247,7 @@ class RasteriseToMastergrid:
         extent_str, dimensions_str (Tuple) : Returns tuple of strings \
             representing extent and dimensions
         """
-        src = rasterio.open(self.mastergrid)
+        src = rasterio.open(self.template)
         extent_str = (f'{src.bounds.left} {src.bounds.bottom} '
                       f'{src.bounds.right} {src.bounds.top}')
         dimension_str = f'{src.width} {src.height}'
@@ -258,29 +268,15 @@ class RasteriseToMastergrid:
         None
 
         """
-        if not self.layer:
-            cmd = (f'gdal_rasterize -a {self.field} -co "COMPRESS=LZW" -co '
-                   f'"PREDICTOR=2" -co "BIGTIFF=YES" -co \
-                    "BLOCKXSIZE=512" -co '
-                   f'"BLOCKYSIZE=512" -co "TILED=YES" -ts {self.dims} \
-                    -te '
-                   f'{self.extent} -a_nodata {self.nodata} -ot \
-                    {self.dtype} '
-                   f'{str(self.vector)} {str(self.out_raster)}')
+        if self.layer:
+            gdf = gpd.read_file(self.vector, layer=self.layer)
         else:
-            cmd = \
-                (f'gdal_rasterize -a {self.field} -co "COMPRESS=LZW"\
-                    -co '
-                 f'"PREDICTOR=2" -co "BIGTIFF=YES" -co \
-                     "BLOCKXSIZE=512" -co '
-                 f'"BLOCKYSIZE=512" -co "TILED=YES" -ts \
-                    {self.dims} -te '
-                 f'{self.extent} -a_nodata {self.nodata} -ot \
-                    {self.dtype} '
-                 f'-l {self.layer} '
-                 f'{str(self.vector)} {str(self.out_raster)}')
-        subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                       stderr=subprocess.STDOUT, shell=True)
+            gdf = gpd.read_file(self.vector)
+        cube = make_geocube(gdf,
+                            measurements=[self.field],
+                            resolution=self.resolution,
+                            like=self.dataset)
+        cube[self.field].rio.to_raster(self.out_raster)
 
 
 class AttributeFieldInvalidError(Exception):
@@ -290,4 +286,8 @@ class AttributeFieldInvalidError(Exception):
 
 class LayerNotFoundError(Exception):
     """Layer not found error"""
+    pass
+
+class ResolutionNotGivenError(Exception):
+    """Resolution not given error"""
     pass

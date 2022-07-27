@@ -28,15 +28,16 @@ def extr():
 
 @pytest.fixture
 def shp():
-    x = redeextract.RasteriseToMastergrid(TEST_SHP, TEMPLATE,
-                                          OUT_RASTER, 'val')
+    x = redeextract.RasteriseToMastergrid(TEST_SHP, 
+                                          OUT_RASTER, 'val', template=GLOB_RASTER)
     yield x
 
 
 @pytest.fixture
 def gpkg():
-    y = redeextract.RasteriseToMastergrid(TEST_GPKG, TEMPLATE,
+    y = redeextract.RasteriseToMastergrid(TEST_GPKG,
                                           OUT_RASTER, 'val',
+                                          template=GLOB_RASTER,
                                           layer='ADM_ADM_0')
     yield y
 
@@ -77,15 +78,21 @@ def test_extent_and_dimensions(extr):
     assert extr.width == expected_width
 
 
-def test_rasterise(gpkg):
+def test_rasterise_gpkg(gpkg):
     gpkg.rasterise()
     src = rasterio.open(OUT_RASTER)
     expected_extent = (f'{src.bounds.left} {src.bounds.bottom} '
                        f'{src.bounds.right} {src.bounds.top}')
     expected_dims = f'{src.width} {src.height}'
     assert OUT_RASTER.exists()
-    assert gpkg.extent == expected_extent  # CHECK OUTPUT matches master
-    assert gpkg.dims == expected_dims  # CHECK OUTPUT matches master
+
+def test_rasterise_shp(shp):    
+    shp.rasterise()
+    src = rasterio.open(OUT_RASTER)
+    expected_extent = (f'{src.bounds.left} {src.bounds.bottom} '
+                       f'{src.bounds.right} {src.bounds.top}')
+    expected_dims = f'{src.width} {src.height}'
+    assert OUT_RASTER.exists()
 
 
 # ----------------------------------------------------------#

@@ -2,3 +2,5 @@ geopandas
 rasterio
 pytest
 flake8
+geocube
+rioxarray
