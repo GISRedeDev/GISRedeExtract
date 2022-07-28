@@ -156,8 +156,9 @@ class RasteriseToMastergrid:
     """Class with functions that call gdal commands to rasterise
     shapefiles or geopackages so that the output extent and resolution
     and transform match the input mastergrid"""
-    def __init__(self, vector, out_raster, field, 
-                 template=None, resolution=None, dtype="int32", nodata=9999, layer=None):
+    def __init__(self, vector, out_raster, field,
+                 template=None, resolution=None,
+                 dtype="int32", nodata=9999, layer=None):
         """
         Initialisation:
         ---------------
@@ -172,10 +173,13 @@ class RasteriseToMastergrid:
             in this field should be numeric - preferrably integer
 
         template : (None/Path/str)
-            Path to template raster used to match extent and resolution (if not None then there MUST be a resolution - Not both) (DEFAULT = None)            
-        
+            Path to template raster used to match extent and resolution
+            (if not None then there MUST be a resolution - Not both)
+            (DEFAULT = None)
+
         resolution : (None/tuple)
-            Resolution as length 2 tuple i.e. (0.008333333, 0.008333333) (DEFAULT = None)
+            Resolution as length 2 tuple i.e. (0.008333333,
+            0.008333333) (DEFAULT = None)
 
         dtype : (str)
             Datatype/pixel depth of output raster
@@ -287,6 +291,7 @@ class AttributeFieldInvalidError(Exception):
 class LayerNotFoundError(Exception):
     """Layer not found error"""
     pass
+
 
 class ResolutionNotGivenError(Exception):
     """Resolution not given error"""

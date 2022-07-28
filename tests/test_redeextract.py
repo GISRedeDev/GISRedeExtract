@@ -28,8 +28,10 @@ def extr():
 
 @pytest.fixture
 def shp():
-    x = redeextract.RasteriseToMastergrid(TEST_SHP, 
-                                          OUT_RASTER, 'val', template=GLOB_RASTER)
+    x = redeextract.RasteriseToMastergrid(TEST_SHP,
+                                          OUT_RASTER,
+                                          'val',
+                                          template=GLOB_RASTER)
     yield x
 
 
@@ -58,8 +60,10 @@ def test_class_instantiation(shp, gpkg):
 def test_incorrect_field_type_raises_exception():
     with pytest.raises(redeextract.AttributeFieldInvalidError) as \
             exc_info:
-        _ = redeextract.RasteriseToMastergrid(TEST_SHP, TEMPLATE,
-                                              OUT_RASTER, field='GID_0')
+        _ = redeextract.RasteriseToMastergrid(TEST_SHP,
+                                              OUT_RASTER,
+                                              field='GID_0',
+                                              template=GLOB_RASTER)
     assert str(exc_info.value) == \
         ('GID_0 is not a valid attribute in '
          'the shapefile/geopackage. Please retry with a valid'
@@ -71,7 +75,7 @@ def test_extent_and_dimensions(extr):
     expected_extent = (src.bounds.left, src.bounds.bottom,
                        src.bounds.right, src.bounds.top)
     expected_width = src.width
-    expected_height =  src.height
+    expected_height = src.height
     src.close()
     assert extr.extent == expected_extent
     assert extr.height == expected_height
@@ -80,18 +84,11 @@ def test_extent_and_dimensions(extr):
 
 def test_rasterise_gpkg(gpkg):
     gpkg.rasterise()
-    src = rasterio.open(OUT_RASTER)
-    expected_extent = (f'{src.bounds.left} {src.bounds.bottom} '
-                       f'{src.bounds.right} {src.bounds.top}')
-    expected_dims = f'{src.width} {src.height}'
     assert OUT_RASTER.exists()
 
-def test_rasterise_shp(shp):    
+
+def test_rasterise_shp(shp):
     shp.rasterise()
-    src = rasterio.open(OUT_RASTER)
-    expected_extent = (f'{src.bounds.left} {src.bounds.bottom} '
-                       f'{src.bounds.right} {src.bounds.top}')
-    expected_dims = f'{src.width} {src.height}'
     assert OUT_RASTER.exists()
 
 
